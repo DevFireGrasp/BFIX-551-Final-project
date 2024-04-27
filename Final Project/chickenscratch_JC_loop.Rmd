@@ -1,0 +1,142 @@
+---
+title: "Final Project -Edits"
+author: "Jamilet Cordon"
+date: "2024-04-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+if (!require(tidyverse)) install.packages("tidyverse"); require(tidyverse)
+if (!require(leaflet)) install.packages("leaflet"); require(leaflet) #leaflet library for interactive maps
+if (!require(sf)) install.packages("sf"); require(sf) #sf library for spatial data manipulation
+if (!require(ggplot2)) install.packages("ggplot2"); require(ggplot2)
+if (!require(shiny)) install.packages("shiny"); require(shiny)
+if (!require(tidycensus)) install.packages("shiny"); require(tidycensus) #for accessing US Census Bureau data
+
+# Set your census API key
+census_api_key("70ef9b17b0bebe70074471ca4ff3f92b342b1692")
+# Fetch and prepare the data outside of the Shiny server function
+
+#Variables_ALL <- load_variables(2022,"acs5")
+                              
+# Fetch and prepare the data outside of the Shiny server function
+MultiYear<-data.frame()
+years<-c(2022, 2021, 2020, 2019, 2018)
+for(y in 1:length(years)){
+
+  
+acs_data <- get_acs(
+  geography = "state", #geographic level of data to retrieve(so in this case state level)
+  variables = list(    #Specifying the variables to retrieve from ACS
+    migration_age = "B07001_005",           #Variable for age 20-24
+    migration_agey= "B07001_006",           #Variable for age 25-29
+    migration_bothgender="B07003_001", #variable for gender 
+    migration_male="B07003_002",
+    migration_female="B07003_003",
+    migration_income="B07010_001" #variable for migration based on income 
+  
+    
+  ),
+  year = years[y]                 ,     #the year of ACS data to retrieve
+  geometry = TRUE  #geographic boundaries 
+) |> 
+  
+   mutate(Variable = case_when(variable == "migration_age" ~ "Migration Age 20-24",
+                              variable == "migration_gender" ~ "Migration Gender",
+                              variable == "migration_income" ~ "Migration Total Income $75,000",
+                              variable == "migration_bothgender"~"Migration All Genders",
+                              variable == "migration_female"~"Migration Female",
+                              variable == "migration_male"~"Migration Male",
+                              variable == "migration_agey"~"Migration Age 25-29")) |> 
+  
+  #columns to exclude
+  dplyr::select(-moe, -GEOID, -variable) |> 
+  #transforming the dataset from a long format to a wide format
+  pivot_wider(names_from = Variable, values_from = estimate) |> 
+  #filtering data the continental US states only
+  filter(!NAME %in% c("Alaska", "Puerto Rico", "Hawaii")) |>
+  mutate(Year=years[y])
+
+
+MultiYear<-rbind(MultiYear, acs_data)
+}
+
+
+#predictions*
+
+```
+
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Interactive Map with Census Data"), #creating a title to display it on top
+  sidebarLayout(
+    
+    # Sidebar panel for inputs 
+    sidebarPanel(
+      
+      # First input: Type of data
+      selectInput(inputId = "data_type",
+                  label = "Choose the type of data you want to see:",
+                  choices = list("Gender" = "G", "Gender Gap Index" = "Gender Gap Index")),
+      
+      # Second input (choices depend on the choice for the first input)
+      uiOutput("secondSelection"),
+      
+      # Third input (choices depend on the choice for the first and second input)
+      uiOutput("thirdSelection")
+      
+    ),
+  leafletOutput("map")                            # creating a placeholder for a Leaflet map in the UI
+)
+
+```
+
+```{r}
+# Define Server logic
+server <- function(input, output) {  #server function for the shiny app
+  output$map <- renderLeaflet({      #the output object named "map" in the UI will be generated here
+    leaflet(data = MultiYear) %>%     #creating a leaflet map
+      addTiles() %>%                 #providing the underlying map imagery 
+      addPolygons(                   #adding geographic boundaries 
+        fillColor = ~colorNumeric(palette = "viridis", domain = acs_data$`Migration Age 20-24`)(`Migration Age 20-24`),
+        weight = 2,
+        opacity = 1,
+        color = 'white',
+        dashArray = '3',
+        fillOpacity = 0.7,
+        popup = ~paste("State:", NAME, "<br>",
+                       "Migration Age 20-24:", `Migration Age 20-24`, "<br>",
+                       "Migration Gender:", `Migration All Genders`, "<br>",
+                       "Migration Total Income $75,000:", `Migration Total Income $75,000`)
+      ) %>%
+      addLegend("bottomright",    #adding map color 
+                pal = colorNumeric(palette = "viridis", domain = acs_data$`Migration Age 20-24`),
+                values = ~`Migration Age 20-24`,
+                title = "Migration Age 20-24",
+                opacity = 0.7)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+  
+  
+ 
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
