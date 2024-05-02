@@ -5,20 +5,18 @@ if (!require(ggplot2)) install.packages("ggplot2"); require(ggplot2)
 if (!require(shiny)) install.packages("shiny"); require(shiny)
 if (!require(tidycensus)) install.packages("shiny"); require(tidycensus) #for accessing US Census Bureau data
 if (!require(shinydashboard)) install.packages("shinydashboard"); require(shinydashboard) #for accessing US Census Bureau data
-if (!require(rsconnect)) install.packages("rsconnect"); require(rsconnect) #for website
 
-census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71", install = TRUE, overwrite = TRUE)
 
-#20-24 age
-#2018-2022 timeline
 
-#Link to Theme selector: https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
 
-#evey years variables ex. B01002001
+
+# Set your census API key
+census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71")
 
 
 # Fetch and prepare the data outside of the Shiny server function
 Variables_ALL <- load_variables(2020,"acs5")
+
 
 acs_data <- get_acs(
   geography = "state", #geographic level of data to retrieve(so in this case state level)
@@ -28,89 +26,96 @@ acs_data <- get_acs(
     cost_of_living_index = "B19013_001"  #Variable for cost of living
   ),
   year = 2020,     #the year of ACS data to retrieve
-  geometry = TRUE  #geographic boundaries
-) |>
-
+  geometry = TRUE  #geographic boundaries 
+) |> 
+  
   #Mutate and manipulate the data
-  #Added a new column called Variable to the dataset (acs_data) to conditionally assign values
+  #Added a new column called Variable to the dataset (acs_data) to conditionally assign values 
   mutate(Variable = case_when(variable == "median_age" ~ "Median Age",
                               variable == "cost_of_living_index" ~ "Cost of Living Index",
-                              variable == "median_earnings" ~ "Median Earnings")) |>
+                              variable == "median_earnings" ~ "Median Earnings")) |> 
   #columns to exclude
-  dplyr::select(-moe, -GEOID, -variable) |>
+  dplyr::select(-moe, -GEOID, -variable) |> 
   #transforming the dataset from a long format to a wide format
-  pivot_wider(names_from = Variable, values_from = estimate) |>
+  pivot_wider(names_from = Variable, values_from = estimate) |> 
   #filtering data the continental US states only
   filter(!NAME %in% c("Alaska", "Puerto Rico", "Hawaii"))
 
+#################################################################################################
 
-
-
-
-
-
-
-
-ui <-
-  dashboardPage(
-  dashboardHeader(title = "Basic dashboard"),
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem("Map", tabName = "map", icon = icon("map")),
-      menuItem("Table", tabName = "table", icon = icon("table")),
-      menuItem("Documentation", tabName = "documentation", icon = icon("dashboard"))
-    )
-  ),
-  dashboardBody(
-    tabItems(
-      # First tab content
-      tabItem(tabName = "map",
-              fluidRow(
-                leafletOutput("map"))
-      ),
-      #Second Tabs Content
-      tabItem(tabName = "table",
-              fluidRow(
-                                box(
-                  title = "Controls",
-                  sliderInput("slider", "Number of observations:", 1, 100, 50)))
-      ),
-
-      # Second tab content
-      tabItem(tabName = "widgets",
-              h2("Widgets tab content")
-      )
-    )
-  )
+ui <- dashboardPage(skin = "black",  #Change to change theme, Dashboard theme is different from shiny themes, dashboard has blue, black, purple, green, red yellow,
+                    dashboardHeader(title = "US Census Data"),
+                    dashboardSidebar(
+                      
+                      
+                      sidebarMenu(
+                        menuItem("Search", icon = icon("search"), #For Each new Slider or Search func, it needs to be added as a new menuSubItem
+                                 menuSubItem(
+                                   selectInput(
+                                     inputId =  "date_from", 
+                                     label = "Select time period:", 
+                                     choices = 2014:2021,
+                                     selected = 2020
+                                   )
+                                 ),
+                                 menuSubItem( 
+                                   sliderInput("age", "Age Range:",
+                                               min = 18, max = 32,
+                                               value = 22)
+                                 ),
+                                 menuSubItem( 
+                                   selectInput("removeStates", "Which States to not consider:",
+                                               choices = c('Alabama', 'Alaska','Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia', 'Guam', 'Hawaii', "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"),
+                                               multiple = TRUE
+                                   )
+                                 )
+                        ),
+                        
+                        
+                        menuItem("USMap", tabName = "usmap", icon = icon("map")),
+                        menuItem("Dataset", tabName = "dataset", icon = icon("home")),
+                        menuItem("Documentation", tabName = "settings", icon = icon("gear")),
+                        menuItem("Download Personal Report", tabName = "print", icon = icon("print"))
+                        
+                      )
+                    ),
+                    dashboardBody(
+                      tabItems(
+                        tabItem(tabName = "usmap",
+                                h2("Interactive Map with Census Data"),
+                                leafletOutput("map") ),
+                        
+                        
+                        
+                        
+                        tabItem(tabName = "dataset",
+                                h2("Data Section"),
+                                tableOutput("chart")),
+                        tabItem(tabName = "print",
+                                h2("Print Section"),
+                                textInput("name", "Please enter your Name", placeholder = "Jane Doe"),
+                                checkboxInput("hasMap", "Would you like the map included?", FALSE),
+                                checkboxInput("hasTable", "Would you like the table included?", FALSE),
+                                downloadButton("download", "Download Data")
+                        )
+                      )
+                    )
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Define Server logic
-server <- function(input, output) {  #server function for the shiny app
+server <- function(input, output) {
+  
+  #chosen_data <- reactive({get(input$date_from)})
+  
+  
+  
+  
+  #output$chart <- renderTable(acs_data) Working on this
+  
+  #server function for the shiny app
   output$map <- renderLeaflet({      #the output object named "map" in the UI will be generated here
     leaflet(data = acs_data) %>%     #creating a leaflet map
-      addTiles() %>%                 #providing the underlying map imagery
-      addPolygons(                   #adding geographic boundaries
+      addTiles() %>%                 #providing the underlying map imagery 
+      addPolygons(                   #adding geographic boundaries 
         fillColor = ~colorNumeric(palette = "viridis", domain = acs_data$`Median Age`)(`Median Age`),
         weight = 2,
         opacity = 1,
@@ -122,7 +127,7 @@ server <- function(input, output) {  #server function for the shiny app
                        "Median Earnings:", `Median Earnings`, "<br>",
                        "Cost of Living Index:", `Cost of Living Index`)
       ) %>%
-      addLegend("bottomright",    #adding map color
+      addLegend("bottomright",    #adding map color 
                 pal = colorNumeric(palette = "viridis", domain = acs_data$`Median Age`),
                 values = ~`Median Age`,
                 title = "Median Age",
@@ -130,4 +135,7 @@ server <- function(input, output) {  #server function for the shiny app
   })
 }
 
-shinyApp(ui, server)
+
+
+
+shinyApp(ui = ui, server = server)
