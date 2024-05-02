@@ -5,9 +5,17 @@ if (!require(ggplot2)) install.packages("ggplot2"); require(ggplot2)
 if (!require(shiny)) install.packages("shiny"); require(shiny)
 if (!require(tidycensus)) install.packages("shiny"); require(tidycensus) #for accessing US Census Bureau data
 if (!require(shinydashboard)) install.packages("shinydashboard"); require(shinydashboard) #for accessing US Census Bureau data
+if (!require(rsconnect)) install.packages("rsconnect"); require(rsconnect) #for website
 
-# Set your census API key
-census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71")
+census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71", install = TRUE, overwrite = TRUE)
+
+#20-24 age
+#2018-2022 timeline
+
+#Link to Theme selector: https://shiny.posit.co/r/gallery/application-layout/shiny-theme-selector/
+
+#evey years variables ex. B01002001
+
 
 # Fetch and prepare the data outside of the Shiny server function
 Variables_ALL <- load_variables(2020,"acs5")
@@ -36,33 +44,90 @@ acs_data <- get_acs(
   filter(!NAME %in% c("Alaska", "Puerto Rico", "Hawaii"))
 
 
-#################################################################################################
 
-ui <- dashboardPage(
-  dashboardHeader(title = "US Census Data"),
+
+
+
+
+
+
+ui <-
+  dashboardPage(
+  dashboardHeader(title = "Basic dashboard"),
   dashboardSidebar(
     sidebarMenu(
-      menuItem("USMap", tabName = "usmap", icon = icon("map")),
-      menuItem("Dataset", tabName = "dashboard", icon = icon("home")),
-      menuItem("Documentation", tabName = "settings", icon = icon("gear"))
+      menuItem("Map", tabName = "map", icon = icon("map")),
+      menuItem("Table", tabName = "table", icon = icon("table")),
+      menuItem("Documentation", tabName = "documentation", icon = icon("dashboard"))
     )
   ),
   dashboardBody(
     tabItems(
-      tabItem(tabName = "usmap",
-              h2("Interactive Map with Census Data")),
+      # First tab content
+      tabItem(tabName = "map",
+              fluidRow(
+                leafletOutput("map"))
+      ),
+      #Second Tabs Content
+      tabItem(tabName = "table",
+              fluidRow(
+                                box(
+                  title = "Controls",
+                  sliderInput("slider", "Number of observations:", 1, 100, 50)))
+      ),
 
-      #leafletOutput("map"), #ADDING MAP
-
-      tabItem(tabName = "dashboard",
-              h2("Data Section")),
-      tabItem(tabName = "settings",
-              h2("Documentation Section"))
+      # Second tab content
+      tabItem(tabName = "widgets",
+              h2("Widgets tab content")
+      )
     )
   )
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Define Server logic
-server <- function(input, output) {
+server <- function(input, output) {  #server function for the shiny app
+  output$map <- renderLeaflet({      #the output object named "map" in the UI will be generated here
+    leaflet(data = acs_data) %>%     #creating a leaflet map
+      addTiles() %>%                 #providing the underlying map imagery
+      addPolygons(                   #adding geographic boundaries
+        fillColor = ~colorNumeric(palette = "viridis", domain = acs_data$`Median Age`)(`Median Age`),
+        weight = 2,
+        opacity = 1,
+        color = 'white',
+        dashArray = '3',
+        fillOpacity = 0.7,
+        popup = ~paste("State:", NAME, "<br>",
+                       "Median Age:", `Median Age`, "<br>",
+                       "Median Earnings:", `Median Earnings`, "<br>",
+                       "Cost of Living Index:", `Cost of Living Index`)
+      ) %>%
+      addLegend("bottomright",    #adding map color
+                pal = colorNumeric(palette = "viridis", domain = acs_data$`Median Age`),
+                values = ~`Median Age`,
+                title = "Median Age",
+                opacity = 0.7)
+  })
 }
 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
