@@ -141,6 +141,8 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                         tabItem(tabName = "dataset",
                                 h2("Data Section"),
                                 tableOutput("chart")),
+                        
+                        ##Download page and button
                         tabItem(tabName = "print",
                                 h2("Print Section"),
                                 textInput("name", "Please enter your Name", placeholder = "Jane Doe"),
@@ -205,12 +207,16 @@ server <- function(input, output) {
   )
   
   
+  #THIS IS FOR THE DOWNLOAD FUNCTION // PDF or PNG
   output$downloadData <- downloadHandler(
+    #this function names the fine
     filename = function() {
+      paste(input$name, ".png")
     },
+    #This is for what to store in the file
     content = function(file) {
      
-      write.csv(chosen_data, file)
+     # ex. write.csv(chosen_data, file)
     }
   )
   
