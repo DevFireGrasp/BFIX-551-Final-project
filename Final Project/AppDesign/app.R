@@ -115,8 +115,8 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                         
                         
                         menuItem("USMap", tabName = "usmap", icon = icon("map")),
-                        menuItem("Dataset", tabName = "dataset", icon = icon("home")),
-                        menuItem("Download Personal Report", tabName = "print", icon = icon("print"))
+                        #menuItem("Dataset", tabName = "dataset", icon = icon("home")), Removed dataset tab, already have a lot of visualization of the data
+                        menuItem("Ranking and Personal Report", tabName = "print", icon = icon("print"))
                         
                       )
                     ),
@@ -138,17 +138,15 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                         ),
                         
                         
-                        tabItem(tabName = "dataset",
-                                h2("Data Section"),
-                                tableOutput("chart")),
+                        
                         
                         ##Download page and button
                         tabItem(tabName = "print",
-                                h2("Print Section"),
-                                textInput("name", "Please enter your Name", placeholder = "Jane Doe"),
-                                checkboxInput("hasMap", "Would you like the map included?", FALSE),
-                                checkboxInput("hasTable", "Would you like the table included?", FALSE),
-                                downloadButton("downloadData", "Download Data")
+                                h2("Ranking and Print Section"),
+                                tableOutput("preview"),
+                                selectInput("datasetYR", "Pick a Year", 2018:2022, selected = 2020),
+                                checkboxInput("all", "Print All States?", FALSE),
+                                downloadButton("download", "Download .csv")
                         )
                       )
                     )
@@ -207,16 +205,62 @@ server <- function(input, output) {
   )
   
   
-  #THIS IS FOR THE DOWNLOAD FUNCTION // PDF or PNG
-  output$downloadData <- downloadHandler(
-    #this function names the fine
+  output$preview<-renderTable({
+    table_data <- plot_data<-acs_data2 %>% #Grabs the same data we used for the charts on map page
+      as.data.frame()%>% 
+      select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)   #filters for year, state (NAME), and COL - pay
+    table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)           #COL - pay is negative so got the absolute
+    table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]       #order by COL
+    table_data$year <- as.integer(table_data$year)                                       #getting .00 after year, fixed
+    table_data <- unique(table_data)                                                     #states showing more then once, so made only unique vars show
+    table_data <- head(table_data, 10)                                                    #Make it a top 10 list
+    table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )   #Show a Rank column to look nice
+    
+    
+      
+  })
+  
+  
+  
+  data <- reactive({
+    
+
+    
+    
+    if(input$all == TRUE) #This is the same data as the renderTable above be is ALL 50 States
+    {
+      table_data <- plot_data<-acs_data2 %>% 
+        as.data.frame()%>% 
+        select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
+      table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
+      table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
+      table_data$year <- as.integer(table_data$year)
+      table_data <- unique(table_data)
+      table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
+    }
+    else
+    {
+      #This is a 1to1 of the renderTable function above, but to input into a file.This is the top 10 Ranking
+      table_data <- plot_data<-acs_data2 %>% 
+        as.data.frame()%>% 
+        select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
+      table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
+      table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
+      table_data$year <- as.integer(table_data$year)
+      table_data <- unique(table_data)
+      table_data <- head(table_data, 10)
+      table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
+      }
+  })
+  
+  
+  #download function
+  output$download <- downloadHandler(
     filename = function() {
-      paste(input$name, ".png")
+      paste('CensusRankingACCESSED-', Sys.Date(), '.csv', sep='')
     },
-    #This is for what to store in the file
     content = function(file) {
-     
-     # ex. write.csv(chosen_data, file)
+      vroom::vroom_write(data(), file)
     }
   )
   
@@ -229,4 +273,4 @@ server <- function(input, output) {
 
 
 
-shinyApp(ui = ui, server = server)
+runApp(shinyApp(ui, server))
