@@ -1,12 +1,12 @@
-name: FinalProject
-title: FinalProject
+name: USCensus
+title: USCensus
 username: devfiregrasp
 account: devfiregrasp
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 11867340
-bundleId: 8593236
-url: https://devfiregrasp.shinyapps.io/FinalProject/
+appId: 11964406
+bundleId: 8593106
+url: https://devfiregrasp.shinyapps.io/USCensus/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE

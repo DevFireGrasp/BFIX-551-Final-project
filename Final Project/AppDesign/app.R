@@ -1,16 +1,17 @@
-if (!require(tidyverse)) install.packages("tidyverse"); require(tidyverse)
+#if (!require(tidyverse)) install.packages("tidyverse"); require(tidyverse)
 if (!require(leaflet)) install.packages("leaflet"); require(leaflet) #leaflet library for interactive maps
 if (!require(sf)) install.packages("sf"); require(sf) #sf library for spatial data manipulation
 if (!require(ggplot2)) install.packages("ggplot2"); require(ggplot2)
 if (!require(shiny)) install.packages("shiny"); require(shiny)
-if (!require(tidycensus)) install.packages("shiny"); require(tidycensus) #for accessing US Census Bureau data
+if (!require(tidycensus)) install.packages("tidycensus"); require(tidycensus) #for accessing US Census Bureau data
 if (!require(shinydashboard)) install.packages("shinydashboard"); require(shinydashboard) #for accessing US Census Bureau data
-
+if (!require(dplyr)) install.packages("dplyr"); require(dplyr)
 
 
 
 # Set your census API key
-census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71")
+census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71", install = TRUE, overwrite =  TRUE)
+readRenviron("~/.Renviron")
 
 
 # Fetch and prepare the data outside of the Shiny server function
@@ -130,7 +131,7 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                                 list(
                                   h2("Interactive Map with Census Data"),
                                   leafletOutput("map") ),
-                                h2("Gap Between Cost of Living and Median Earnings"),
+                                h2("Predictive and Historic Cost of Living and Earnings Data"),
                                 fluidRow(
                                   column(width=6,plotOutput("plot1")),
                                   column(width=6,plotOutput("plot2"))
