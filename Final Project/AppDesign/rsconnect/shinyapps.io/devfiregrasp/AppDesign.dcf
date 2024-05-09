@@ -1,0 +1,12 @@
+name: AppDesign
+title: AppDesign
+username: devfiregrasp
+account: devfiregrasp
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11958808
+bundleId: 8589559
+url: https://devfiregrasp.shinyapps.io/AppDesign/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

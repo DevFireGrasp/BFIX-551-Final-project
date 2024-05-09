@@ -5,13 +5,12 @@ if (!require(ggplot2)) install.packages("ggplot2"); require(ggplot2)
 if (!require(shiny)) install.packages("shiny"); require(shiny)
 if (!require(tidycensus)) install.packages("tidycensus"); require(tidycensus) #for accessing US Census Bureau data
 if (!require(shinydashboard)) install.packages("shinydashboard"); require(shinydashboard) #for accessing US Census Bureau data
-if (!require(dplyr)) install.packages("dplyr"); require(dplyr)
+if (!require(dplyr )) install.packages("dplyr "); require(dplyr )
 
 
 
 # Set your census API key
-census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71", install = TRUE, overwrite =  TRUE)
-readRenviron("~/.Renviron")
+census_api_key("f55a180f51955b1f67d3a703d629105d8f24eb71")
 
 
 # Fetch and prepare the data outside of the Shiny server function
@@ -131,7 +130,7 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                                 list(
                                   h2("Interactive Map with Census Data"),
                                   leafletOutput("map") ),
-                                h2("Predictive and Historic Cost of Living and Earnings Data"),
+                                h2("Gap Between Cost of Living and Median Earnings"),
                                 fluidRow(
                                   column(width=6,plotOutput("plot1")),
                                   column(width=6,plotOutput("plot2"))
@@ -144,10 +143,10 @@ ui <- dashboardPage(skin = "purple",  #Change to change theme, Dashboard theme i
                         ##Download page and button
                         tabItem(tabName = "print",
                                 h2("Ranking and Print Section"),
-                                tableOutput("preview"),
-                                selectInput("datasetYR", "Pick a Year", 2018:2022, selected = 2020),
-                                checkboxInput("all", "Print All States?", FALSE),
-                                downloadButton("download", "Download .csv")
+                                # tableOutput("preview"),
+                                # selectInput("datasetYR", "Pick a Year", 2018:2022, selected = 2020),
+                                # checkboxInput("all", "Print All States?", FALSE),
+                                # downloadButton("download", "Download .csv")
                         )
                       )
                     )
@@ -205,54 +204,54 @@ server <- function(input, output) {
   
   )
   
-  
-  output$preview<-renderTable({
-    table_data <- plot_data<-acs_data2 %>% #Grabs the same data we used for the charts on map page
-      as.data.frame()%>% 
-      select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)   #filters for year, state (NAME), and COL - pay
-    table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)           #COL - pay is negative so got the absolute
-    table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]       #order by COL
-    table_data$year <- as.integer(table_data$year)                                       #getting .00 after year, fixed
-    table_data <- unique(table_data)                                                     #states showing more then once, so made only unique vars show
-    table_data <- head(table_data, 10)                                                    #Make it a top 10 list
-    table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )   #Show a Rank column to look nice
+  #TESTING
+  # output$preview<-renderTable({
+  #   table_data <- plot_data<-acs_data2 %>% #Grabs the same data we used for the charts on map page
+  #     as.data.frame()%>% 
+  #     select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)   #filters for year, state (NAME), and COL - pay
+  #   table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)           #COL - pay is negative so got the absolute
+  #   table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]       #order by COL
+  #   table_data$year <- as.integer(table_data$year)                                       #getting .00 after year, fixed
+  #   table_data <- unique(table_data)                                                     #states showing more then once, so made only unique vars show
+  #   table_data <- head(table_data, 10)                                                    #Make it a top 10 list
+  #   table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )   #Show a Rank column to look nice
     
     
       
-  })
+  # })
   
   
   
-  data <- reactive({
-    
-
-    
-    
-    if(input$all == TRUE) #This is the same data as the renderTable above be is ALL 50 States
-    {
-      table_data <- plot_data<-acs_data2 %>% 
-        as.data.frame()%>% 
-        select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
-      table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
-      table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
-      table_data$year <- as.integer(table_data$year)
-      table_data <- unique(table_data)
-      table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
-    }
-    else
-    {
-      #This is a 1to1 of the renderTable function above, but to input into a file.This is the top 10 Ranking
-      table_data <- plot_data<-acs_data2 %>% 
-        as.data.frame()%>% 
-        select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
-      table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
-      table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
-      table_data$year <- as.integer(table_data$year)
-      table_data <- unique(table_data)
-      table_data <- head(table_data, 10)
-      table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
-      }
-  })
+  # data <- reactive({
+  #   
+  # 
+  #   
+  #   
+  #   if(input$all == TRUE) #This is the same data as the renderTable above be is ALL 50 States
+  #   {
+  #     table_data <- plot_data<-acs_data2 %>% 
+  #       as.data.frame()%>% 
+  #       select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
+  #     table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
+  #     table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
+  #     table_data$year <- as.integer(table_data$year)
+  #     table_data <- unique(table_data)
+  #     table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
+  #   }
+  #   else
+  #   {
+  #     #This is a 1to1 of the renderTable function above, but to input into a file.This is the top 10 Ranking
+  #     table_data <- plot_data<-acs_data2 %>% 
+  #       as.data.frame()%>% 
+  #       select(NAME, Cost_of_living_Gap, year) %>% filter(year==input$datasetYR)
+  #     table_data$Cost_of_living_Gap <- abs(table_data$Cost_of_living_Gap)
+  #     table_data <- table_data[order(table_data$Cost_of_living_Gap, decreasing = TRUE),]
+  #     table_data$year <- as.integer(table_data$year)
+  #     table_data <- unique(table_data)
+  #     table_data <- head(table_data, 10)
+  #     table_data <- table_data %>% mutate(Ranking = as.integer(rank(-table_data$Cost_of_living_Gap) ) )
+  #     }
+  # })
   
   
   #download function
