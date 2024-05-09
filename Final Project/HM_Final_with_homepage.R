@@ -10,7 +10,7 @@ if (!require(shinydashboard)) install.packages("shinydashboard")
 if (!require(plotly)) install.packages("plotly")
 
 #Setting working directory 
-setwd("~/Desktop/App")
+#setwd("~/Desktop/App")
 
 #loading data stored in acs_data.Rdata
 load('acs_data.Rdata')
