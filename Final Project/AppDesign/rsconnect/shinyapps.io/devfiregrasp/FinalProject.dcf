@@ -1,0 +1,12 @@
+name: FinalProject
+title: FinalProject
+username: devfiregrasp
+account: devfiregrasp
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11867340
+bundleId: 8594257
+url: https://devfiregrasp.shinyapps.io/FinalProject/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

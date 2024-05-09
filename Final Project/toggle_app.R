@@ -42,20 +42,14 @@ acs_data <- acs_data |>
   left_join(state_df,by="NAME")
 
 
-# Define UI
-ui <- dashboardPage(
-  dashboardHeader(),
-  dashboardSidebar( 
-    sidebarMenu(
-    menuItem("Menu", tabName = "Menu"),
-    menuItem("Map", tabName = "Map"),
-    menuItem("More Options", tabName = "More Options")
-    )
-  ),
-  dashboardBody(
-    leafletOutput("map"), 
-    tags$head(
-      tags$style(HTML("
+home_page <- tabItem(tabName = "Home",
+                     h1('Where to Move?', style='color: white;position:fixed;text-align:center;width:100%;'),
+                     img(src='homepage.png', width='100%'))
+
+map_page <- tabItem(tabName = "Map",
+                    leafletOutput("map"), 
+                    tags$head(
+                      tags$style(HTML("
           .content-wrapper {
             background-color: transparent !important;
           }
@@ -64,7 +58,26 @@ ui <- dashboardPage(
             border-right: 0px !important;
           }
         "))
+                    ))
+
+
+# Define UI
+ui <- dashboardPage(
+  dashboardHeader(title='This is my App'),
+  dashboardSidebar( 
+    sidebarMenu(
+      menuItem("Home", tabName = "Home", icon=icon('home')),
+      menuItem("Map", tabName = "Map", icon=icon('map')),
+      menuItem("Charts", tabName = "Charts", icon=icon('line-chart')),
+      menuItem("More Options", tabName = "More Options")
     )
+  ),
+  dashboardBody(
+    tabItems(
+      home_page,
+      map_page
+    )
+    
   )
 )
 
